@@ -64,7 +64,7 @@ export default function DataTable({
     try {
       let response = await createData(data);
       console.log(response, "form response");
-      setQuery("")
+      setQuery("");
     } catch (error) {
       console.log(error);
     }
@@ -75,7 +75,7 @@ export default function DataTable({
       let response = await deleteData(selectedId);
       setSelectedId("");
       handleDeleteClose();
-      setQuery("")
+      setQuery("");
       console.log(response, "form response");
     } catch (error) {
       console.log(error);
@@ -208,18 +208,33 @@ export default function DataTable({
         >
           Previous
         </button>
-        <span>
+        {/* <span>
           Page {page} of {totalPages}
-        </span>
-        <button
-          onClick={() =>
-            updateQueryParams({ _page: Math.min(page + 1, totalPages) })
-          }
-          disabled={page >= totalPages}
-          className="bg-blue-500 text-white px-4 py-2 rounded disabled:bg-gray-400 cursor-pointer"
-        >
-          Next
-        </button>
+        </span> */}
+        <div className="flex gap-2">
+          <div className="flex gap-2 items-center">
+            <span>Limit: </span>
+            <select
+              name="limit"
+              id="limit"
+              className="w-full p-2 border rounded"
+              onChange={(e) => updateQueryParams({ _limit: e.target.value })}
+            >
+              <option value="5">5</option>
+              <option value="10">10</option>
+              <option value="15">15</option>
+            </select>
+          </div>
+          <button
+            onClick={() =>
+              updateQueryParams({ _page: Math.min(page + 1, totalPages) })
+            }
+            disabled={page >= totalPages}
+            className="bg-blue-500 text-white px-4 py-2 rounded disabled:bg-gray-400 cursor-pointer"
+          >
+            Next
+          </button>
+        </div>
       </div>
     </div>
   );
