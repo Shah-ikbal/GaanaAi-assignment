@@ -35,7 +35,6 @@ export default function LocationModal({
 
   useEffect(() => {
     if (data) {
-      console.log(data, "edit");
       setFormData({ ...formData, code: data?.code });
       setSelectedCountry({ name: data?.country });
       prefetchData();
@@ -59,6 +58,8 @@ export default function LocationModal({
       reset();
     }
   }, []);
+
+  console.log(formData, "formdata");
 
   if (!isOpen) return null; // Don't render if modal is closed
 
@@ -146,6 +147,7 @@ export default function LocationModal({
     handleSelectedCountry(countryResponse[0]);
     handleSelectedState(stateResponse[0]);
     handleSelectedCity(cityResponse[0]);
+    setFormData({ ...formData, code: data?.code });
     setLoading(false);
   };
 
