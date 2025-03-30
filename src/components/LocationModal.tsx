@@ -1,6 +1,6 @@
 "use client";
 
-import { useState, ChangeEvent, FormEvent } from "react";
+import { useState, ChangeEvent, FormEvent, useEffect } from "react";
 import Autocomplete from "./AutoComplete";
 import {
   fetchCityData,
@@ -24,8 +24,8 @@ export default function LocationModal({
     longitude: "",
   });
   const [selectedCountry, setSelectedCountry] = useState<any>({});
-  const [selectedState, setSelectedState] = useState<any>();
-  const [selectedCity, setSelectedCity] = useState<any>();
+  const [selectedState, setSelectedState] = useState<any>({});
+  const [selectedCity, setSelectedCity] = useState<any>({});
 
   if (!isOpen) return null; // Don't render if modal is closed
 
@@ -33,6 +33,19 @@ export default function LocationModal({
     e: ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
+  };
+
+  const closeModal = () => {
+    setSelectedCountry({});
+    setSelectedCity({});
+    setSelectedState({});
+    setFormData({
+      timezone: "",
+      code: "",
+      latitude: "",
+      longitude: "",
+    });
+    onClose();
   };
 
   const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
@@ -51,7 +64,8 @@ export default function LocationModal({
       code: formData.code,
     };
     onSubmit(record);
-    onClose();
+
+    closeModal();
   };
 
   const handleSelectedCountry = (country: any) => {
@@ -136,7 +150,7 @@ export default function LocationModal({
           <div className="flex justify-end gap-2 mt-4">
             <button
               type="button"
-              onClick={onClose}
+              onClick={closeModal}
               className="px-4 py-2 bg-blue-500 text-white rounded cursor-pointer"
             >
               Cancel
