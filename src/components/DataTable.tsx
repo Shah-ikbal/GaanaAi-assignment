@@ -64,7 +64,7 @@ export default function DataTable({
     try {
       let response = await createData(data);
       console.log(response, "form response");
-      setQuery("");
+      setQuery(data?.name);
     } catch (error) {
       console.log(error);
     }
