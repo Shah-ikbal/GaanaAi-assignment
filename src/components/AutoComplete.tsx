@@ -4,9 +4,15 @@ import { useState, ChangeEvent, useEffect } from "react";
 const Autocomplete = ({
   handleSelected,
   fetchData,
+  disabled,
+  fieldName,
+  setFieldName,
 }: {
   handleSelected: (props: any) => void;
   fetchData: any;
+  disabled?: boolean;
+  fieldName?: any;
+  setFieldName: (props: any) => void;
 }) => {
   const [query, setQuery] = useState("");
   const [filteredSuggestions, setFilteredSuggestions] = useState<any[]>([]);
@@ -15,9 +21,9 @@ const Autocomplete = ({
 
   useEffect(() => {
     const fetchSuggestions = async () => {
-      if (queryDebounced.length > 0) {
-        let countryData = await fetchData(queryDebounced);
-        setFilteredSuggestions(countryData);
+      if (queryDebounced.length > 0 && !fieldName?.name) {
+        let response = await fetchData(queryDebounced);
+        setFilteredSuggestions(response);
         setShowSuggestions(true);
       } else {
         setShowSuggestions(false);
@@ -27,9 +33,16 @@ const Autocomplete = ({
     fetchSuggestions();
   }, [queryDebounced]);
 
+  useEffect(() => {
+    if (fieldName?.name) {
+      setQuery(fieldName?.name);
+    }
+  }, [fieldName]);
+
   const handleChange = async (e: ChangeEvent<HTMLInputElement>) => {
     const userInput = e.target.value;
     setQuery(userInput);
+    // setFieldName({ ...fieldName, name: userInput });
   };
 
   const handleSelect = (suggestion: any) => {
@@ -42,10 +55,11 @@ const Autocomplete = ({
     <div className="relative w-full">
       <input
         type="text"
-        className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500"
+        className="w-full p-2 border rounded focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:bg-gray-200 disabled:cursor-not-allowed"
         placeholder="Search..."
         value={query}
         onChange={handleChange}
+        disabled={disabled}
       />
       {showSuggestions && (
         <ul className="absolute z-10 w-full bg-white border border-gray-300 rounded-lg mt-1 shadow-md">

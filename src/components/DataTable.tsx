@@ -6,7 +6,7 @@ import sortIcon from "@/assets/sortIcon.svg";
 import editIcon from "@/assets/editIcon.svg";
 import deleteIcon from "@/assets/deleteIcon.svg";
 import LocationModal from "./LocationModal";
-import { createData, deleteData } from "@/services/dataService";
+import { createData, deleteData, updateData } from "@/services/dataService";
 import useDebounce from "@/hooks/useDebounce";
 import DeleteModal from "./DeleteModal";
 import Toaster from "./Toaster";
@@ -30,8 +30,10 @@ export default function DataTable({
 }) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [isEditModalOpen, setIsEditModalOpen] = useState(false);
   const [toast, setToast] = useState<any>(null);
   const [selectedId, setSelectedId] = useState("");
+  const [selectedData, setSelectedData] = useState<any>(null);
   const [query, setQuery] = useState("");
   const [visibleColumns, setVisibleColumns] = useState<Record<string, boolean>>(
     columns.reduce((acc, col) => ({ ...acc, [col.key]: true }), {})
@@ -60,12 +62,20 @@ export default function DataTable({
   const handleClose = () => setIsModalOpen(false);
   const handleDeleteOpen = () => setIsDeleteModalOpen(true);
   const handleDeleteClose = () => setIsDeleteModalOpen(false);
+  const handleEditOpen = () => setIsEditModalOpen(true);
+  const handleEditClose = () => setIsEditModalOpen(false);
 
-  const handleSubmit = async (data: any) => {
+  const handleSubmit = async (data: any, type: "Add" | "Edit") => {
     console.log("Form Data:", data);
     try {
-      await createData(data);
-      showToast("Location added successfully", "success");
+      if (type === "Add") {
+        await createData(data);
+        showToast("Location added successfully", "success");
+      } else {
+        await updateData(selectedData.id, data);
+        setSelectedData(null);
+        showToast("Location updated successfully", "success");
+      }
       setQuery(data?.name);
     } catch (error: any) {
       showToast(error.toString(), "error");
@@ -102,9 +112,17 @@ export default function DataTable({
   return (
     <div className="p-4">
       <LocationModal
+        type="Add"
         isOpen={isModalOpen}
         onClose={handleClose}
         onSubmit={handleSubmit}
+      />
+      <LocationModal
+        type="Edit"
+        isOpen={isEditModalOpen}
+        onClose={handleEditClose}
+        onSubmit={handleSubmit}
+        data={selectedData}
       />
       <DeleteModal
         isOpen={isDeleteModalOpen}
@@ -183,7 +201,10 @@ export default function DataTable({
                         <img
                           src={editIcon.src}
                           className="h-5 cursor-pointer"
-                          //   onClick={() => {}}
+                          onClick={() => {
+                            setSelectedData(row);
+                            handleEditOpen();
+                          }}
                         />
                         <img
                           src={deleteIcon.src}

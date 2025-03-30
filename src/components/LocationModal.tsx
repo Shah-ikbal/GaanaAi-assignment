@@ -7,15 +7,20 @@ import {
   fetchCountryData,
   fetchStateData,
 } from "@/services/locationService";
+import Loader from "./Loader";
 
 export default function LocationModal({
   isOpen,
   onClose,
   onSubmit,
+  type,
+  data,
 }: {
   isOpen: boolean;
   onClose: () => void;
-  onSubmit: (props: any) => void;
+  onSubmit: (data: any, type: "Add" | "Edit") => void;
+  type: "Add" | "Edit";
+  data?: any;
 }) {
   const [formData, setFormData] = useState({
     timezone: "",
@@ -23,9 +28,37 @@ export default function LocationModal({
     latitude: "",
     longitude: "",
   });
-  const [selectedCountry, setSelectedCountry] = useState<any>({});
-  const [selectedState, setSelectedState] = useState<any>({});
-  const [selectedCity, setSelectedCity] = useState<any>({});
+  const [selectedCountry, setSelectedCountry] = useState<any>({ name: "" });
+  const [selectedState, setSelectedState] = useState<any>({ name: "" });
+  const [selectedCity, setSelectedCity] = useState<any>({ name: "" });
+  const [loading, setLoading] = useState<boolean>(false);
+
+  useEffect(() => {
+    if (data) {
+      console.log(data, "edit");
+      setFormData({ ...formData, code: data?.code });
+      setSelectedCountry({ name: data?.country });
+      prefetchData();
+    }
+  }, [data]);
+
+  const reset = () => {
+    setSelectedCountry({ name: "" });
+    setSelectedCity({ name: "" });
+    setSelectedState({ name: "" });
+    setFormData({
+      timezone: "",
+      code: "",
+      latitude: "",
+      longitude: "",
+    });
+  };
+
+  useEffect(() => {
+    if (type === "Add") {
+      reset();
+    }
+  }, []);
 
   if (!isOpen) return null; // Don't render if modal is closed
 
@@ -33,19 +66,6 @@ export default function LocationModal({
     e: ChangeEvent<HTMLInputElement | HTMLSelectElement>
   ) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
-  };
-
-  const closeModal = () => {
-    setSelectedCountry({});
-    setSelectedCity({});
-    setSelectedState({});
-    setFormData({
-      timezone: "",
-      code: "",
-      latitude: "",
-      longitude: "",
-    });
-    onClose();
   };
 
   const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
@@ -63,8 +83,8 @@ export default function LocationModal({
       unlocs: [selectedCity?.countryCode + selectedCity?.stateCode],
       code: formData.code,
     };
-    onSubmit(record);
-    closeModal();
+    onSubmit(record, type);
+    onClose();
   };
 
   const handleSelectedCountry = (country: any) => {
@@ -76,9 +96,11 @@ export default function LocationModal({
       });
     }
   };
+
   const handleSelectedState = (state: any) => {
     setSelectedState(state);
   };
+
   const handleSelectedCity = (city: any) => {
     setSelectedCity(city);
     setFormData({
@@ -88,16 +110,61 @@ export default function LocationModal({
     });
   };
 
+  const fetchCountries = async (search = "") => {
+    return fetchCountryData({ search });
+  };
+
+  const fetchStates = async (search = "") => {
+    return fetchStateData({ search, countryCode: selectedCountry?.isoCode });
+  };
+
+  const fetchCities = async (search = "") => {
+    return fetchCityData({
+      search,
+      stateCode: selectedState?.isoCode,
+      countryCode: selectedCountry?.isoCode,
+    });
+  };
+
+  const prefetchData = async () => {
+    setLoading(true);
+    let countryResponse: any = await fetchCountryData({
+      name: data?.country,
+      search: "",
+    });
+    let stateResponse: any = await fetchStateData({
+      name: data?.province,
+      countryCode: countryResponse[0]?.isoCode,
+      search: "",
+    });
+    let cityResponse: any = await fetchCityData({
+      name: data?.name,
+      stateCode: stateResponse[0]?.isoCode,
+      countryCode: countryResponse[0]?.isoCode,
+      search: "",
+    });
+    handleSelectedCountry(countryResponse[0]);
+    handleSelectedState(stateResponse[0]);
+    handleSelectedCity(cityResponse[0]);
+    setLoading(false);
+  };
+
+  if (loading) {
+    return <Loader />;
+  }
+
   return (
     <div className="fixed inset-0 flex items-center justify-center bg-opacity-30 backdrop-blur-sm">
       <div className="bg-white p-6 rounded-lg shadow-lg w-96">
-        <h2 className="text-xl font-semibold mb-4">Add Location</h2>
+        <h2 className="text-xl font-semibold mb-4">{type} Location</h2>
         <form onSubmit={handleSubmit}>
           <div className="mb-3">
             <label className="block text-sm font-medium">Country</label>
             <Autocomplete
               handleSelected={handleSelectedCountry}
-              fetchData={fetchCountryData}
+              fetchData={fetchCountries}
+              fieldName={selectedCountry}
+              setFieldName={setSelectedCountry}
             />
           </div>
           <div className="mb-3">
@@ -105,10 +172,9 @@ export default function LocationModal({
             <select
               name="timezone"
               id="timezone"
-              className="w-full p-2 border rounded"
+              className="w-full p-2 border rounded disabled:bg-gray-200 disabled:cursor-not-allowed"
               disabled={
-                !Object.keys(selectedCountry)?.length &&
-                !selectedCountry?.timezones?.length
+                !selectedCountry.name && !selectedCountry?.timezones?.length
               }
               value={formData.timezone}
               onChange={handleChange}
@@ -124,14 +190,20 @@ export default function LocationModal({
             <label className="block text-sm font-medium">Province</label>
             <Autocomplete
               handleSelected={handleSelectedState}
-              fetchData={fetchStateData}
+              fetchData={fetchStates}
+              disabled={!selectedCountry?.name}
+              fieldName={selectedState}
+              setFieldName={setSelectedState}
             />
           </div>
           <div className="mb-3">
             <label className="block text-sm font-medium">City</label>
             <Autocomplete
               handleSelected={handleSelectedCity}
-              fetchData={fetchCityData}
+              fetchData={fetchCities}
+              disabled={!selectedState?.name}
+              fieldName={selectedCity}
+              setFieldName={setSelectedCity}
             />
           </div>
           <div className="mb-3">
@@ -149,7 +221,7 @@ export default function LocationModal({
           <div className="flex justify-end gap-2 mt-4">
             <button
               type="button"
-              onClick={closeModal}
+              onClick={onClose}
               className="px-4 py-2 bg-blue-500 text-white rounded cursor-pointer"
             >
               Cancel
@@ -158,9 +230,9 @@ export default function LocationModal({
               type="submit"
               className="px-4 py-2 bg-blue-500 text-white rounded disabled:bg-gray-400 cursor-pointer disabled:cursor-not-allowed"
               disabled={
-                !Object.keys(selectedCountry)?.length ||
-                !Object.keys(selectedCity)?.length ||
-                !Object.keys(selectedState)?.length
+                !selectedCountry?.name ||
+                !selectedCity?.name ||
+                !selectedState?.name
               }
             >
               Submit
