@@ -8,7 +8,7 @@ export async function fetchData(
   pageSize: number = 5
 ) {
   const response = await fetch(
-    `${BASE_URL}/data?_page=${page}&limit=${pageSize}&_sort=${sortBy}&_order=${order}&_q=${search}`
+    `${BASE_URL}/data?_page=${page}&limit=${pageSize}&_sort=${sortBy}&_order=${order}&q=${search}`
   );
   if (!response.ok) {
     throw new Error(`HTTP error! status: ${response.status}`);

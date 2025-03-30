@@ -2,6 +2,10 @@
 
 import { useRouter, useSearchParams } from "next/navigation";
 import { useState } from "react";
+import sortIcon from "@/assets/sortIcon.svg";
+import editIcon from "@/assets/editIcon.svg";
+import deleteIcon from "@/assets/deleteIcon.svg";
+import LocationModal from "./LocationModal";
 
 const columns = [
   { key: "id", label: "ID" },
@@ -9,6 +13,8 @@ const columns = [
   { key: "province", label: "Province" },
   { key: "country", label: "Country" },
   { key: "timezone", label: "TimeZone" },
+  { key: "code", label: "Code" },
+  { key: "actions", label: "Actions" },
 ];
 
 export default function DataTable({
@@ -18,6 +24,7 @@ export default function DataTable({
   initialData: any;
   totalItems: any;
 }) {
+  const [isModalOpen, setIsModalOpen] = useState(false);
   const [visibleColumns, setVisibleColumns] = useState<Record<string, boolean>>(
     columns.reduce((acc, col) => ({ ...acc, [col.key]: true }), {})
   );
@@ -27,7 +34,6 @@ export default function DataTable({
 
   const search = searchParams.get("q") || "";
   const sortBy = searchParams.get("_sort") || "id";
-  const order = searchParams.get("_order") || "asc";
   const page = parseInt(searchParams.get("_page") || "1");
   const pageSize = parseInt(searchParams.get("_limit") || "5");
 
@@ -39,38 +45,37 @@ export default function DataTable({
     router.push(`?${newParams.toString()}`);
   };
 
+  const handleOpen = () => setIsModalOpen(true);
+  const handleClose = () => setIsModalOpen(false);
+
+  const handleSubmit = (data: any) => {
+    console.log("Form Data:", data);
+  };
+
   return (
     <div className="p-4">
+      <LocationModal
+        isOpen={isModalOpen}
+        onClose={handleClose}
+        onSubmit={handleSubmit}
+      />
       <div className="mb-8">
         <p className="text-2xl font-semibold">Data Table</p>
       </div>
-      <div className="flex gap-2 mb-4">
+      <div className="flex gap-2 mb-4 justify-between">
         <input
           type="text"
           placeholder="Search..."
           defaultValue={search}
           onChange={(e) => updateQueryParams({ q: e.target.value, _page: 1 })}
-          className="border p-2 rounded"
+          className="border p-2 rounded w-2xl"
         />
-        <select
-          defaultValue={sortBy}
-          onChange={(e) => updateQueryParams({ _sort: e.target.value })}
-          className="border p-2 rounded"
+        <button
+          className="bg-blue-500 text-white px-4 py-2 rounded cursor-pointer"
+          onClick={handleOpen}
         >
-          {columns.map((col) => (
-            <option key={col.key} value={col.key}>
-              {col.label}
-            </option>
-          ))}
-        </select>
-        <select
-          defaultValue={order}
-          onChange={(e) => updateQueryParams({ _order: e.target.value })}
-          className="border p-2 rounded"
-        >
-          <option value="asc">Ascending</option>
-          <option value="desc">Descending</option>
-        </select>
+          Add Location
+        </button>
       </div>
 
       <div className="flex gap-2 mb-2">
@@ -98,7 +103,18 @@ export default function DataTable({
             {columns.map((col) =>
               visibleColumns[col.key] ? (
                 <th key={col.key} className="border p-2">
-                  {col.label}
+                  <div className="flex">
+                    <p>{col.label}</p>
+                    <img
+                      src={sortIcon.src}
+                      className="h-5 ml-auto cursor-pointer"
+                      onClick={() =>
+                        updateQueryParams({
+                          _sort: sortBy === col.key ? `-${sortBy}` : col.key,
+                        })
+                      }
+                    />
+                  </div>
                 </th>
               ) : null
             )}
@@ -110,7 +126,24 @@ export default function DataTable({
               {columns.map((col) =>
                 visibleColumns[col.key] ? (
                   <td key={col.key} className="border p-2">
-                    {row[col.key]}
+                    {col.key === "actions" ? (
+                      <div className="flex gap-2 justify-center">
+                        <img
+                          src={editIcon.src}
+                          className="h-5 cursor-pointer"
+                          //   onClick={() => {}}
+                        />
+                        <img
+                          src={deleteIcon.src}
+                          className="h-5 cursor-pointer"
+                          //   onClick={() => {}}
+                        />
+                      </div>
+                    ) : row[col.key] ? (
+                      row[col.key]
+                    ) : (
+                      "N/A"
+                    )}
                   </td>
                 ) : null
               )}
@@ -123,7 +156,7 @@ export default function DataTable({
         <button
           onClick={() => updateQueryParams({ _page: Math.max(1, page - 1) })}
           disabled={page === 1}
-          className="bg-blue-500 text-white px-4 py-2 rounded disabled:bg-gray-400"
+          className="bg-blue-500 text-white px-4 py-2 rounded disabled:bg-gray-400 cursor-pointer disabled:cursor-not-allowed"
         >
           Previous
         </button>
@@ -135,7 +168,7 @@ export default function DataTable({
             updateQueryParams({ _page: Math.min(page + 1, totalPages) })
           }
           disabled={page >= totalPages}
-          className="bg-blue-500 text-white px-4 py-2 rounded disabled:bg-gray-400"
+          className="bg-blue-500 text-white px-4 py-2 rounded disabled:bg-gray-400 cursor-pointer"
         >
           Next
         </button>

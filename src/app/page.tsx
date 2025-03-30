@@ -12,7 +12,7 @@ export default async function Home({
   const page = parseInt((await searchParams)?._page as string) || 1;
   const pageSize = parseInt((await searchParams)?._limit as string) || 5;
 
-  const { data, items } = await fetchData(
+  const  data = await fetchData(
     search,
     sortBy,
     order,
@@ -21,7 +21,7 @@ export default async function Home({
   );
   return (
     <div>
-      <DataTable initialData={data} totalItems={items} />
+      <DataTable initialData={data} totalItems={1670} />
     </div>
   );
 }
