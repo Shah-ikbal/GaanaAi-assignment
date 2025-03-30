@@ -9,6 +9,7 @@ import LocationModal from "./LocationModal";
 import { createData, deleteData } from "@/services/dataService";
 import useDebounce from "@/hooks/useDebounce";
 import DeleteModal from "./DeleteModal";
+import Toaster from "./Toaster";
 
 const columns = [
   { key: "id", label: "ID" },
@@ -29,6 +30,7 @@ export default function DataTable({
 }) {
   const [isModalOpen, setIsModalOpen] = useState(false);
   const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [toast, setToast] = useState<any>(null);
   const [selectedId, setSelectedId] = useState("");
   const [query, setQuery] = useState("");
   const [visibleColumns, setVisibleColumns] = useState<Record<string, boolean>>(
@@ -62,23 +64,23 @@ export default function DataTable({
   const handleSubmit = async (data: any) => {
     console.log("Form Data:", data);
     try {
-      let response = await createData(data);
-      console.log(response, "form response");
+      await createData(data);
+      showToast("Location added successfully", "success");
       setQuery(data?.name);
-    } catch (error) {
-      console.log(error);
+    } catch (error: any) {
+      showToast(error.toString(), "error");
     }
   };
 
   const handleDelete = async () => {
     try {
-      let response = await deleteData(selectedId);
+      await deleteData(selectedId);
       setSelectedId("");
       handleDeleteClose();
       setQuery("");
-      console.log(response, "form response");
-    } catch (error) {
-      console.log(error);
+      showToast("Location deleted successfully", "success");
+    } catch (error: any) {
+      showToast(error.toString(), "error");
       setSelectedId("");
       handleDeleteClose();
     }
@@ -91,6 +93,11 @@ export default function DataTable({
 
     fetchQuery();
   }, [queryDebounced]);
+
+  const showToast = (message: string, type: string) => {
+    setToast({ message, type });
+    setTimeout(() => setToast(null), 3000); // Auto-hide
+  };
 
   return (
     <div className="p-4">
@@ -236,6 +243,13 @@ export default function DataTable({
           </button>
         </div>
       </div>
+      {toast && (
+        <Toaster
+          message={toast.message}
+          type={toast.type}
+          onClose={() => setToast(null)}
+        />
+      )}
     </div>
   );
 }

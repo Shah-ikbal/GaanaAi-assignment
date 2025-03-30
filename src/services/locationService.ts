@@ -4,7 +4,11 @@ export async function fetchCountryData(search = "") {
   try {
     const response = await fetch(`${BASE_URL}/country?q=${search}`);
     if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+      if (response.status === 500) {
+        throw new Error("Internal Server error");
+      } else {
+        throw new Error("Something went wrong!");
+      }
     }
     return await response.json();
   } catch (error) {
@@ -16,7 +20,11 @@ export async function fetchStateData(search = "") {
   try {
     const response = await fetch(`${BASE_URL}/state?q=${search}`);
     if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+      if (response.status === 500) {
+        throw new Error("Internal Server error");
+      } else {
+        throw new Error("Something went wrong!");
+      }
     }
     return await response.json();
   } catch (error) {
@@ -28,7 +36,11 @@ export async function fetchCityData(search = "") {
   try {
     const response = await fetch(`${BASE_URL}/cities?q=${search}`);
     if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+      if (response.status === 500) {
+        throw new Error("Internal Server error");
+      } else {
+        throw new Error("Something went wrong!");
+      }
     }
     return await response.json();
   } catch (error) {

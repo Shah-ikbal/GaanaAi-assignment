@@ -12,11 +12,15 @@ export async function fetchData(
       `${BASE_URL}/data?_page=${page}&_limit=${pageSize}&_sort=${sortBy}&_order=${order}&q=${search}`
     );
     if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+      if (response.status === 500) {
+        throw new Error("Internal Server error");
+      } else {
+        throw new Error("Something went wrong!");
+      }
     }
     return await response.json();
   } catch (error) {
-    console.error(error);
+    console.log(error);
   }
 }
 
@@ -29,12 +33,17 @@ export async function createData(data: any) {
       },
       body: JSON.stringify(data),
     });
+
     if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+      if (response.status === 500) {
+        throw new Error("Internal Server error");
+      } else {
+        throw new Error("Something went wrong!");
+      }
     }
     return await response.json();
   } catch (error) {
-    console.error(error);
+    throw error;
   }
 }
 
@@ -48,11 +57,15 @@ export async function updateData(id: string, data: any) {
       body: JSON.stringify(data),
     });
     if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+      if (response.status === 500) {
+        throw new Error("Internal Server error");
+      } else {
+        throw new Error("Something went wrong!");
+      }
     }
     return await response.json();
   } catch (error) {
-    console.error(error);
+    throw error;
   }
 }
 
@@ -62,10 +75,14 @@ export async function deleteData(id: string) {
       method: "DELETE",
     });
     if (!response.ok) {
-      throw new Error(`HTTP error! status: ${response.status}`);
+      if (response.status === 500) {
+        throw new Error("Internal Server error");
+      } else {
+        throw new Error("Something went wrong!");
+      }
     }
     return await response.json();
   } catch (error) {
-    console.error(error);
+    throw error;
   }
 }
