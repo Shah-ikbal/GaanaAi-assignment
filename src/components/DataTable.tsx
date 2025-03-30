@@ -1,11 +1,14 @@
 "use client";
 
 import { useRouter, useSearchParams } from "next/navigation";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import sortIcon from "@/assets/sortIcon.svg";
 import editIcon from "@/assets/editIcon.svg";
 import deleteIcon from "@/assets/deleteIcon.svg";
 import LocationModal from "./LocationModal";
+import { createData, deleteData } from "@/services/dataService";
+import useDebounce from "@/hooks/useDebounce";
+import DeleteModal from "./DeleteModal";
 
 const columns = [
   { key: "id", label: "ID" },
@@ -25,9 +28,13 @@ export default function DataTable({
   totalItems: any;
 }) {
   const [isModalOpen, setIsModalOpen] = useState(false);
+  const [isDeleteModalOpen, setIsDeleteModalOpen] = useState(false);
+  const [selectedId, setSelectedId] = useState("");
+  const [query, setQuery] = useState("");
   const [visibleColumns, setVisibleColumns] = useState<Record<string, boolean>>(
     columns.reduce((acc, col) => ({ ...acc, [col.key]: true }), {})
   );
+  const queryDebounced = useDebounce(query, 300);
 
   const router = useRouter();
   const searchParams = useSearchParams();
@@ -39,18 +46,51 @@ export default function DataTable({
 
   const totalPages = Math.ceil(totalItems / pageSize);
 
-  const updateQueryParams = (params: any) => {
+  const updateQueryParams = (params?: any) => {
     const newParams = new URLSearchParams(searchParams.toString());
-    Object.keys(params).forEach((key) => newParams.set(key, params[key]));
+    if (params && Object.keys(params).length) {
+      Object.keys(params).forEach((key) => newParams.set(key, params[key]));
+    }
     router.push(`?${newParams.toString()}`);
   };
 
   const handleOpen = () => setIsModalOpen(true);
   const handleClose = () => setIsModalOpen(false);
+  const handleDeleteOpen = () => setIsDeleteModalOpen(true);
+  const handleDeleteClose = () => setIsDeleteModalOpen(false);
 
-  const handleSubmit = (data: any) => {
+  const handleSubmit = async (data: any) => {
     console.log("Form Data:", data);
+    try {
+      let response = await createData(data);
+      console.log(response, "form response");
+      setQuery("")
+    } catch (error) {
+      console.log(error);
+    }
   };
+
+  const handleDelete = async () => {
+    try {
+      let response = await deleteData(selectedId);
+      setSelectedId("");
+      handleDeleteClose();
+      setQuery("")
+      console.log(response, "form response");
+    } catch (error) {
+      console.log(error);
+      setSelectedId("");
+      handleDeleteClose();
+    }
+  };
+
+  useEffect(() => {
+    const fetchQuery = async () => {
+      updateQueryParams({ q: queryDebounced, _page: 1 });
+    };
+
+    fetchQuery();
+  }, [queryDebounced]);
 
   return (
     <div className="p-4">
@@ -59,6 +99,11 @@ export default function DataTable({
         onClose={handleClose}
         onSubmit={handleSubmit}
       />
+      <DeleteModal
+        isOpen={isDeleteModalOpen}
+        onClose={handleDeleteClose}
+        onSubmit={handleDelete}
+      />
       <div className="mb-8">
         <p className="text-2xl font-semibold">Data Table</p>
       </div>
@@ -66,8 +111,8 @@ export default function DataTable({
         <input
           type="text"
           placeholder="Search..."
-          defaultValue={search}
-          onChange={(e) => updateQueryParams({ q: e.target.value, _page: 1 })}
+          value={query}
+          onChange={(e) => setQuery(e.target.value)}
           className="border p-2 rounded w-2xl"
         />
         <button
@@ -136,7 +181,10 @@ export default function DataTable({
                         <img
                           src={deleteIcon.src}
                           className="h-5 cursor-pointer"
-                          //   onClick={() => {}}
+                          onClick={() => {
+                            setSelectedId(row.id);
+                            handleDeleteOpen();
+                          }}
                         />
                       </div>
                     ) : row[col.key] ? (

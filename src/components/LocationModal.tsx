@@ -1,7 +1,12 @@
 "use client";
 
 import { useState, ChangeEvent, FormEvent } from "react";
-import { Country, State, City } from "country-state-city";
+import Autocomplete from "./AutoComplete";
+import {
+  fetchCityData,
+  fetchCountryData,
+  fetchStateData,
+} from "@/services/locationService";
 
 export default function LocationModal({
   isOpen,
@@ -13,29 +18,61 @@ export default function LocationModal({
   onSubmit: (props: any) => void;
 }) {
   const [formData, setFormData] = useState({
-    name: "",
-    city: "",
-    country: "",
-    province: "",
     timezone: "",
     code: "",
-    zoneName: "",
     latitude: "",
     longitude: "",
   });
-
-  console.log(City.getAllCities());
+  const [selectedCountry, setSelectedCountry] = useState<any>({});
+  const [selectedState, setSelectedState] = useState<any>();
+  const [selectedCity, setSelectedCity] = useState<any>();
 
   if (!isOpen) return null; // Don't render if modal is closed
 
-  const handleChange = (e: ChangeEvent<HTMLInputElement>) => {
+  const handleChange = (
+    e: ChangeEvent<HTMLInputElement | HTMLSelectElement>
+  ) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
   const handleSubmit = (e: FormEvent<HTMLFormElement>) => {
     e.preventDefault();
-    onSubmit(formData);
+    let record = {
+      id: selectedCity?.countryCode + selectedCity?.stateCode,
+      name: selectedCity?.name,
+      city: selectedCity?.name,
+      country: selectedCountry?.name,
+      alias: [],
+      regions: [],
+      coordinates: [formData.latitude, formData.longitude],
+      province: selectedState?.name,
+      timezone: formData.timezone,
+      unlocs: [selectedCity?.countryCode + selectedCity?.stateCode],
+      code: formData.code,
+    };
+    onSubmit(record);
     onClose();
+  };
+
+  const handleSelectedCountry = (country: any) => {
+    setSelectedCountry(country);
+    if (country?.timezones?.length) {
+      setFormData({
+        ...formData,
+        timezone: country?.timezones[0].zoneName,
+      });
+    }
+  };
+  const handleSelectedState = (state: any) => {
+    setSelectedState(state);
+  };
+  const handleSelectedCity = (city: any) => {
+    setSelectedCity(city);
+    setFormData({
+      ...formData,
+      latitude: city?.latitude,
+      longitude: city?.longitude,
+    });
   };
 
   return (
@@ -44,58 +81,59 @@ export default function LocationModal({
         <h2 className="text-xl font-semibold mb-4">Add Location</h2>
         <form onSubmit={handleSubmit}>
           <div className="mb-3">
-            <label className="block text-sm font-medium">Name</label>
-            <input
-              type="text"
-              name="name"
-              value={formData.name}
-              onChange={handleChange}
-              className="w-full p-2 border rounded"
-              required
+            <label className="block text-sm font-medium">Country</label>
+            <Autocomplete
+              handleSelected={handleSelectedCountry}
+              fetchData={fetchCountryData}
             />
           </div>
-          {/* <div className="mb-3">
-            <label className="block text-sm font-medium">Country</label>
+          <div className="mb-3">
+            <label className="block text-sm font-medium">Time Zones</label>
             <select
-              name="country"
-              id="country"
-              className="border p-2 rounded w-full"
+              name="timezone"
+              id="timezone"
+              className="w-full p-2 border rounded"
+              disabled={
+                !Object.keys(selectedCountry)?.length &&
+                !selectedCountry?.timezones?.length
+              }
+              value={formData.timezone}
+              onChange={handleChange}
             >
-              {Country.getAllCountries().map((data: any) => (
-                <option value={data} key={data.isoCode}>
-                  {data.name}
+              {selectedCountry?.timezones?.map((zone: any, idx: number) => (
+                <option value={zone.zoneName} key={idx}>
+                  {zone.zoneName}
                 </option>
               ))}
             </select>
           </div>
           <div className="mb-3">
             <label className="block text-sm font-medium">Province</label>
-            <select
-              name="province"
-              id="province"
-              className="border p-2 rounded w-full"
-            >
-              {State.getAllStates().map((data: any) => (
-                <option value={data} key={data.stateCode}>
-                  {data.name}
-                </option>
-              ))}
-            </select>
+            <Autocomplete
+              handleSelected={handleSelectedState}
+              fetchData={fetchStateData}
+            />
           </div>
           <div className="mb-3">
             <label className="block text-sm font-medium">City</label>
-            <select name="city" id="city" className="border p-2 rounded w-full">
-              {City.getAllCities().map((data: any) => (
-                <option
-                  value={data}
-                  key={data.stateCode + data.name + data.countryCode}
-                >
-                  {data.name}
-                </option>
-              ))}
-            </select>
-          </div> */}
-          <div className="flex justify-end gap-2">
+            <Autocomplete
+              handleSelected={handleSelectedCity}
+              fetchData={fetchCityData}
+            />
+          </div>
+          <div className="mb-3">
+            <label className="block text-sm font-medium">Code</label>
+            <input
+              type="number"
+              name="code"
+              min={0}
+              value={formData.code}
+              onChange={handleChange}
+              className="w-full p-2 border rounded"
+              required
+            />
+          </div>
+          <div className="flex justify-end gap-2 mt-4">
             <button
               type="button"
               onClick={onClose}
